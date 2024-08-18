@@ -3,13 +3,13 @@
 use defmt::{debug, info};
 
 /// AC4490 config structs & enums (channel, output power, etc.)
-pub mod types;
+mod types;
 mod util;
 
 use num_enum::TryFromPrimitive;
 
 #[allow(clippy::wildcard_imports)]
-use types::*;
+pub use types::*;
 
 mod eeprom;
 

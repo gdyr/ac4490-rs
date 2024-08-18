@@ -1,6 +1,6 @@
 [package]
 name = "ac4490"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Rust driver for the Ezurio / Laird / Aerocomm AC4490 transceiver"
 license = "MIT"
