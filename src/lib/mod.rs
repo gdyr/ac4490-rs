@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(not(feature = "std"))]
-use defmt::{debug, info};
+use defmt::debug;
 
 /// AC4490 config structs & enums (channel, output power, etc.)
 mod types;
