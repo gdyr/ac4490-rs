@@ -1,5 +1,6 @@
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(not(feature = "std"))]
 use defmt::{debug, info};
 
 /// AC4490 config structs & enums (channel, output power, etc.)
@@ -179,7 +180,13 @@ impl<D: DeviceInterface + Send> AC4490<D> {
         }
         // If debug enabled, print hex bytes
         if self.debug {
+
+            #[cfg(not(feature = "std"))]
             debug!("Wrote: {:?}", data);
+
+            #[cfg(feature = "std")]
+            println!("Wrote: {:?}", data);
+
         }
         Ok(())
     }
@@ -219,7 +226,7 @@ impl<D: DeviceInterface + Send> AC4490<D> {
         match result {
             Ok(()) => {
                 if self.debug {
-                    debug!("Read: {:?}", data);
+                    println!("Read: {:?}", data);
                 }
                 Ok(Some(data.len()))
             }
@@ -229,10 +236,8 @@ impl<D: DeviceInterface + Send> AC4490<D> {
 
 
     async fn query(&mut self, request: &[u8], response: &mut [u8]) -> Result<(), Error> {
-        info!("Query: {:?}", request);
         self.write(request).await?;
         self.read(response).await?;
-        info!("Response: {:?}", response);
         Ok(())
     }
 
