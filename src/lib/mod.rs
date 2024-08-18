@@ -239,13 +239,19 @@ impl<D: DeviceInterface + Send> AC4490<D> {
 
             #[cfg(feature = "std")]
             println!("Attempting to read {} bytes", data.len());
-            
+
         }
         let result = self.port.read(data).await;
         match result {
             Ok(()) => {
                 if self.debug {
+
+                    #[cfg(not(feature = "std"))]
+                    debug!("Read: {:?}", data);
+
+                    #[cfg(feature = "std")]
                     println!("Read: {:?}", data);
+
                 }
                 Ok(Some(data.len()))
             }
