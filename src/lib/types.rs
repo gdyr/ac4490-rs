@@ -10,7 +10,7 @@ use crate::Error;
 /// Set 2 = 0x30 - 0x37 Australia (1x1/200/1000)
 ///
 #[repr(u8)]
-#[derive(Clone, Copy, TryFromPrimitive)]
+#[derive(Format, Debug, Clone, Copy, TryFromPrimitive)]
 pub enum Channel {
     Ch00 = 0x00,
     Ch01 = 0x01,
@@ -71,7 +71,7 @@ pub enum Channel {
 }
 
 /// Server / Client mode selection
-#[derive(Clone, Copy)]
+#[derive(Format, Debug, Clone, Copy)]
 pub enum ServerClientMode {
     Server,
     Client,
@@ -114,7 +114,7 @@ impl ServerClientMode {
 
 /// Device status response (mode and in/out of range)
 #[repr(u8)]
-#[derive(Clone, Copy, TryFromPrimitive)]
+#[derive(Format, Debug, Clone, Copy, TryFromPrimitive)]
 #[allow(clippy::enum_variant_names)]
 pub enum Status {
     ServerInRange = 0x00,
@@ -130,7 +130,7 @@ pub enum Status {
 /// `Rssi` = Received signal strength indicator
 /// 
 #[repr(u8)]
-#[derive(Clone, Copy, TryFromPrimitive)]
+#[derive(Format, Debug, Clone, Copy, TryFromPrimitive)]
 pub enum AdcPort {
     AdIn = 0x00,
     Temp = 0x01,
@@ -142,7 +142,7 @@ pub enum AdcPort {
 /// In units of dBm (e.g. `Minus1dBm` = -1dBm)
 /// 
 #[repr(u8)]
-#[derive(Clone, Copy, TryFromPrimitive)]
+#[derive(Format, Debug, Clone, Copy, TryFromPrimitive)]
 #[allow(clippy::enum_variant_names)]
 pub enum OutputPower {
     Minus1dBm = 0x00,
@@ -177,10 +177,10 @@ pub struct Control0 {
 impl From<u8> for Control0 {
     fn from(value: u8) -> Self {
         Self {
-            one_beacon_mode: value & 0b0000_0001 != 0,
-            des_encryption: value & 0b0000_0010 != 0,
-            sync_to_channel: value & 0b0000_0100 != 0,
-            broadcast_packets: value & 0b0000_1000 != 0,
+            one_beacon_mode: value & 0b1000_0000 != 0,
+            des_encryption: value & 0b0100_0000 != 0,
+            sync_to_channel: value & 0b0010_0000 != 0,
+            broadcast_packets: value & 0b0000_0010 != 0,
         }
     }
 }
@@ -189,16 +189,16 @@ impl From<Control0> for u8 {
     fn from(value: Control0) -> Self {
         let mut result = 0;
         if value.one_beacon_mode {
-            result |= 0b0000_0001;
+            result |= 0b1000_0000;
         }
         if value.des_encryption {
-            result |= 0b0000_0010;
+            result |= 0b0100_0000;
         }
         if value.sync_to_channel {
-            result |= 0b0000_0100;
+            result |= 0b0010_0000;
         }
         if value.broadcast_packets {
-            result |= 0b0000_1000;
+            result |= 0b0000_0010;
         }
         result
     }

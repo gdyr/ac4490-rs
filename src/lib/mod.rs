@@ -18,6 +18,16 @@ use thiserror_no_std::Error;
 
 use util::hex_to_rssi;
 
+macro_rules! eeprom_read {
+    ($self:expr, $parameter:expr, $L:expr) => {{
+        const DATA_LENGTH: usize = $parameter.length() as usize;
+        let mut data = [0u8; DATA_LENGTH];
+        let response = $self.eeprom_operation_raw::<{DATA_LENGTH + 3}>($parameter, None).await?;
+        data.copy_from_slice(&response[3..]);
+        Ok(data)
+    }};
+}
+
 /// Error type for AC4490 operations
 #[derive(Error, Debug)]
 pub enum Error {
@@ -222,6 +232,9 @@ impl<D: DeviceInterface + Send> AC4490<D> {
     ///
     /// Returns an error if the read fails.
     pub async fn read(&mut self, data: &mut [u8]) -> Result<Option<usize>, Error> {
+        if self.debug {
+            debug!("Attempting to read {} bytes", data.len());
+        }
         let result = self.port.read(data).await;
         match result {
             Ok(()) => {
@@ -1022,44 +1035,34 @@ impl<D: DeviceInterface + Send> AC4490<D> {
             parameter as u8,
             parameter.length(),
         ];
+
         self.write(&cmd).await?;
         if let Some(value) = write_value {
             self.write(value).await?;
         }
 
-        let mut response_meta = [0; 2];
-        self.read(&mut response_meta).await?;
-        if response_meta[0] != parameter as u8
-            || response_meta[1] != parameter.length()
-        {
-            return Err(Error::InvalidResponse);
-        }
-
         let mut response = [0; N];
         self.read(&mut response).await?;
-        Ok(response)
-    }
 
-    async fn eeprom_read<const N: usize>(
-        &mut self,
-        parameter: eeprom::Parameter,
-    ) -> Result<[u8; N], Error> {
-        self.eeprom_operation_raw::<N>(parameter, None).await
+        if write_value.is_none() && response[0] != 0xCC {
+            return Err(Error::InvalidResponse);
+        } else {
+            let start = response[if write_value.is_some() { 0 } else { 1 } as usize];
+            let length = response[if write_value.is_some() { 1 } else { 2 } as usize];
+            if start != parameter as u8 || length != parameter.length() {
+                return Err(Error::InvalidResponse);
+            }
+        }
+
+        Ok(response)
+
     }
 
     async fn eeprom_read_byte(&mut self, parameter: eeprom::Parameter) -> Result<u8, Error> {
-        self.eeprom_operation_raw::<1>(parameter, None)
+        self.eeprom_operation_raw::<4>(parameter, None)
             .await
-            .map(|r| r[0])
+            .map(|r| r[3])
     }
-
-    // async fn eeprom_read_type<const N: usize, T: TryFrom<[u8; N], Error = Error>>(
-    //     &mut self,
-    //     parameter: eeprom::Parameter,
-    // ) -> Result<T, Error> {
-    //     let response = self.eeprom_operation_raw::<N>(parameter, None).await?;
-    //     T::try_from(response).map_err(|_| Error::InvalidResponse)
-    // }
 
     async fn eeprom_read_byte_type<T: TryFromPrimitive<Primitive = u8>>(
         &mut self,
@@ -1074,7 +1077,7 @@ impl<D: DeviceInterface + Send> AC4490<D> {
         parameter: eeprom::Parameter,
         value: &[u8],
     ) -> Result<(), Error> {
-        self.eeprom_operation_raw::<1>(parameter, Some(value))
+        self.eeprom_operation_raw::<3>(parameter, Some(value))
             .await?;
         Ok(())
     }
@@ -1102,8 +1105,7 @@ impl<D: DeviceInterface + Send> AC4490<D> {
     ///
     /// Returns an error if read or write fails, or if the response is invalid.
     pub async fn eeprom_get_product_id_string(&mut self) -> Result<[u8; 40], Error> {
-        self.eeprom_read::<40>(eeprom::Parameter::ProductIdString)
-            .await
+        eeprom_read!(self, eeprom::Parameter::ProductIdString, 40)
     }
 
     /// Sets the range refresh EEPROM setting.
@@ -1161,9 +1163,7 @@ impl<D: DeviceInterface + Send> AC4490<D> {
     ///
     /// Returns an error if read or write fails, or if the response is invalid.
     pub async fn eeprom_get_range_refresh(&mut self) -> Result<u8, Error> {
-        self.eeprom_operation_raw::<1>(eeprom::Parameter::PageRefresh, None)
-            .await
-            .map(|r| r[0])
+        self.eeprom_read_byte(eeprom::Parameter::PageRefresh).await
     }
 
     /// Sets the stop bit delay.
@@ -2117,8 +2117,7 @@ impl<D: DeviceInterface + Send> AC4490<D> {
     /// 
     /// Returns an error if read or write fails, or if the response is invalid.
     pub async fn eeprom_get_destination(&mut self) -> Result<[u8; 6], Error> {
-        self.eeprom_read::<6>(eeprom::Parameter::DestinationId)
-            .await
+        eeprom_read!(self, eeprom::Parameter::DestinationId, 6)
     }
 
     /// Set the System ID EEPROM setting
@@ -2192,8 +2191,7 @@ impl<D: DeviceInterface + Send> AC4490<D> {
     /// 
     /// Returns an error if read or write fails, or if the response is invalid.
     pub async fn eeprom_get_mac_id(&mut self) -> Result<[u8; 6], Error> {
-        self.eeprom_read::<6>(eeprom::Parameter::MacId)
-            .await
+        eeprom_read!(self, eeprom::Parameter::MacId, 6)
     }
 
     /// Get the Original Max Power EEPROM value
@@ -2236,8 +2234,7 @@ impl<D: DeviceInterface + Send> AC4490<D> {
     /// 
     /// Returns an error if read or write fails, or if the response is invalid.
     pub async fn eeprom_get_product_id(&mut self) -> Result<[u8; 15], Error> {
-        self.eeprom_read::<15>(eeprom::Parameter::ProductId)
-            .await
+        eeprom_read!(self, eeprom::Parameter::ProductId, 15)
     }
 
     /// Enable / disable the Protocol Status / Receive ACK EEPROM setting
@@ -2496,8 +2493,7 @@ impl<D: DeviceInterface + Send> AC4490<D> {
     /// 
     /// Returns an error if read or write fails, or if the response is invalid.
     pub async fn eeprom_get_des_key(&mut self) -> Result<[u8; 7], Error> {
-        self.eeprom_read::<7>(eeprom::Parameter::DesKey)
-            .await
+        eeprom_read!(self, eeprom::Parameter::DesKey, 7)
     }
 
 }
