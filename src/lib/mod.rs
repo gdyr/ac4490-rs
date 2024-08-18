@@ -1022,11 +1022,10 @@ impl<D: DeviceInterface + Send> AC4490<D> {
             self.write(value).await?;
         }
 
-        let mut response_meta = [0; 3];
+        let mut response_meta = [0; 2];
         self.read(&mut response_meta).await?;
-        if response_meta[0] != 0xCC
-            || response_meta[1] != parameter as u8
-            || response_meta[2] != parameter.length()
+        if response_meta[0] != parameter as u8
+            || response_meta[1] != parameter.length()
         {
             return Err(Error::InvalidResponse);
         }
