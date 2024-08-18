@@ -233,7 +233,13 @@ impl<D: DeviceInterface + Send> AC4490<D> {
     /// Returns an error if the read fails.
     pub async fn read(&mut self, data: &mut [u8]) -> Result<Option<usize>, Error> {
         if self.debug {
+
+            #[cfg(not(feature = "std"))]
             debug!("Attempting to read {} bytes", data.len());
+
+            #[cfg(feature = "std")]
+            println!("Attempting to read {} bytes", data.len());
+            
         }
         let result = self.port.read(data).await;
         match result {
