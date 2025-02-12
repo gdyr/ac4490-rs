@@ -18,6 +18,7 @@ path = "src/lib/mod.rs"
 defmt = "0.3"
 num_enum = { version = "0.7.2", default-features = false }
 thiserror-no-std = "2.0.2"
+zerocopy = "0.8.17"
 
 [lints.rust]
 unsafe_code = "forbid"

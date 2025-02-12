@@ -16,7 +16,7 @@ mod eeprom;
 
 use thiserror_no_std::Error;
 
-use util::hex_to_rssi;
+pub use util::hex_to_rssi;
 
 macro_rules! eeprom_read {
     ($self:expr, $parameter:expr, $L:expr) => {{
