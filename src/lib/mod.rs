@@ -171,6 +171,19 @@ impl<D: DeviceInterface + Send> AC4490<D> {
         Self { port, debug: false }
     }
 
+    /// Decompose the driver into the interface.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use ac4490::{AC4490, Channel};
+    /// let mut transceiver = AC4490::new(device_interface);
+    /// ```
+    /// 
+    pub fn into_interface(self) -> D {
+        self.port
+    }
+
     /// Write data to the transceiver.
     /// 
     /// # Examples
