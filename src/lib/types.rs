@@ -10,7 +10,7 @@ use crate::Error;
 /// Set 2 = 0x30 - 0x37 Australia (1x1/200/1000)
 ///
 #[repr(u8)]
-#[derive(Format, Debug, Clone, Copy, TryFromPrimitive)]
+#[derive(PartialEq, Eq, Format, Debug, Clone, Copy, TryFromPrimitive)]
 pub enum Channel {
     Ch00 = 0x00,
     Ch01 = 0x01,
@@ -71,7 +71,7 @@ pub enum Channel {
 }
 
 /// Server / Client mode selection
-#[derive(Format, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Format, Debug, Clone, Copy)]
 pub enum ServerClientMode {
     Server,
     Client,
@@ -142,7 +142,7 @@ pub enum AdcPort {
 /// In units of dBm (e.g. `Minus1dBm` = -1dBm)
 /// 
 #[repr(u8)]
-#[derive(Format, Debug, Clone, Copy, TryFromPrimitive)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Format, Debug, Clone, Copy, TryFromPrimitive)]
 #[allow(clippy::enum_variant_names)]
 pub enum OutputPower {
     Minus1dBm = 0x00,
@@ -165,7 +165,7 @@ pub enum OutputPower {
 
 /// EEPROM Control0 Flags
 /// 
-#[derive(Format, Debug, Clone)]
+#[derive(PartialEq, Eq, Format, Debug, Clone)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Control0 {
     pub one_beacon_mode: bool,
@@ -205,7 +205,7 @@ impl From<Control0> for u8 {
 }
 
 /// EEPROM API Control Flags
-#[derive(Format, Debug, Clone)]
+#[derive(PartialEq, Eq, Format, Debug, Clone)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct ApiControl {
     pub unicast_only: bool,
@@ -255,7 +255,7 @@ impl From<ApiControl> for u8 {
 }
 
 /// EEPROM Enhanced API Control Flags
-#[derive(Format, Debug, Clone)]
+#[derive(PartialEq, Eq, Format, Debug, Clone)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct EnhancedApiControl {
     #[allow(clippy::struct_field_names)]
